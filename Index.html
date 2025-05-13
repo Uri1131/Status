@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uri Rosen's Status Chase - Enhanced Edition v2</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #1a1a1a;
+            color: #00ff00;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden; /* Prevents horizontal scrollbars from popups */
+            user-select: none; /* Prevent text selection during game */
+        }
+        #game-container {
+            max-width: 700px;
+            margin: 30px auto;
+            padding: 25px;
+            border: 3px solid #00ff00;
+            box-shadow: 0 0 15px #00ff00;
+            background-color: #0d0d0d;
+        }
+        #game-title {
+            font-size: 2em;
+            margin-bottom: 20px;
+            text-shadow: 0 0 5px #00ff00;
+        }
+        #narrator-box {
+            margin-top: 20px;
+            margin-bottom: 25px;
+            padding: 15px;
+            border: 1px dashed #00cc00;
+            min-height: 60px;
+            background-color: #111;
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+        #interactive-area {
+            min-height: 150px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative; /* For absolute positioning of elements */
+        }
+        button, input[type="text"] {
+            background-color: #222;
+            color: #00ff00;
+            border: 2px solid #00ff00;
+            padding: 12px 20px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 1em;
+            margin: 10px;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        button:hover {
+            background-color: #00ff00;
+            color: #111;
+        }
+        input[type="text"] {
+            text-align: center;
+            width: 80%;
+            max-width: 300px;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .clickable-text {
+            cursor: pointer;
+            text-decoration: underline;
+            color: #ffff00; /* Highlight clickable parts of narrator text */
+        }
+        .clickable-text:hover {
+            color: #ffaa00;
+        }
+
+        /* Stage Specific Styles */
+        #moving-button {
+            position: absolute;
+            transition: all 0.3s ease-out;
+        }
+
+        #loading-bar-container {
+            width: 80%;
+            height: 30px;
+            border: 1px solid #00ff00;
+            margin: 20px auto;
+            background-color: #333;
+        }
+        #loading-bar-progress {
+            width: 0%;
+            height: 100%;
+            background-color: #00ff00;
+            transition: width 3s ease-in-out;
+            cursor: pointer; /* Hint for clicking it */
+        }
+        #loading-bar-progress:hover {
+            filter: brightness(1.5);
+        }
+
+        #big-red-button {
+            background-color: #900;
+            color: #fff;
+            border-color: #ff0000;
+            padding: 20px 40px;
+            font-size: 1.5em;
+            box-shadow: 0 0 10px #ff0000;
+        }
+        #big-red-button:hover {
+            background-color: #ff0000;
+            color: #000;
+        }
+        
+        #fake-code-area {
+            font-size: 0.8em;
+            line-height: 1.2;
+            text-align: left;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #008000;
+            padding: 10px;
+            background-color: #050505;
+            white-space: pre; /* Preserve spacing for code-like look */
+        }
+
+        #fake-popup {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #333;
+            border: 2px solid #ffcc00;
+            padding: 20px;
+            z-index: 100;
+            box-shadow: 0 0 20px rgba(0,0,0,0.7);
+            width: 300px;
+            /* transition will be handled by JS for fling */
+        }
+        #fake-popup-dragger {
+            background-color: #444;
+            color: #ffcc00;
+            padding: 5px;
+            margin-bottom: 10px;
+            cursor: grab;
+        }
+        #fake-popup-dragger:active {
+            cursor: grabbing;
+        }
+        #fake-popup-content {
+            margin-bottom: 15px;
+        }
+
+        .color-square {
+            width: 50px;
+            height: 50px;
+            margin: 5px;
+            display: inline-block;
+            border: 2px solid #00ff00;
+            cursor: pointer;
+        }
+        .color-square:hover {
+            border-color: #ffff00;
+        }
+        
+        #squirrel-gif {
+            max-width: 150px;
+            border: 2px solid #00ff00;
+        }
+
+        /* New Stage Styles */
+        #tos-document-display-area, #tos-container-original { /* Changed ID for clarity */
+            width: 90%;
+            max-height: 150px; 
+            overflow-y: scroll;
+            border: 1px solid #00ff00;
+            padding: 10px;
+            margin-bottom: 15px;
+            text-align: left;
+            font-size: 0.7em; 
+            background-color: #050505;
+            white-space: pre-wrap; 
+            color: #00cc00; 
+        }
+        #tos-checkbox-container {
+            margin: 15px 0;
+            font-size: 0.9em;
+        }
+        #tos-question-area {
+            margin-top: 15px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+
+        #fake-timer-display {
+            font-size: 3em;
+            margin: 20px;
+            color: #ffcc00;
+            text-shadow: 0 0 5px #ffcc00;
+            cursor: pointer; 
+        }
+
+        #fake-whatsapp-popup {
+            position: fixed; 
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            background-color: #1e2a2e; 
+            border: 1px solid #075E54;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            z-index: 101;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        #whatsapp-header {
+            background-color: #075E54; 
+            color: white;
+            padding: 10px;
+            font-size: 0.9em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #whatsapp-contact {
+            font-weight: bold;
+        }
+        #whatsapp-close {
+            cursor: pointer;
+            font-size: 1.2em;
+            padding: 0 5px;
+        }
+        #whatsapp-message-area {
+            padding: 15px;
+            min-height: 60px;
+        }
+        #whatsapp-message-bubble {
+            background-color: #054D44; 
+            color: #e0e0e0;
+            padding: 8px 12px;
+            border-radius: 7px;
+            margin-bottom: 5px;
+            max-width: 80%;
+            box-shadow: 0 1px 0.5px rgba(0,0,0,0.2);
+            font-size: 0.9em;
+            word-wrap: break-word;
+        }
+
+    </style>
+</head>
+<body>
+    <!--
+        For local squirrel image:
+        1. Save your squirrel GIF (e.g., "squirrel.gif") in the same directory as this HTML file,
+           or in a subdirectory (e.g., "images/squirrel.gif").
+        2. In the JavaScript `loadStage` function, for `case 15` (the squirrel stage),
+           change `squirrelImg.src` from the Giphy URL to your local path:
+           e.g., `squirrelImg.src = 'squirrel.gif';`
+           or `squirrelImg.src = 'images/squirrel.gif';`
+    -->
+    <div id="game-container">
+        <h1 id="game-title">Uri Rosen's Status Chase</h1>
+        <div id="narrator-box">
+            <p id="narrator-text">Initializing status obfuscation protocol...</p>
+        </div>
+        <div id="interactive-area">
+            <!-- Game elements dynamically inserted here -->
+        </div>
+        <div id="status-reveal-area" class="hidden">
+            <h2>STATUS ACQUIRED!</h2>
+            <p id="final-status-message"></p>
+            <p>You're pretty good at this... too good. Uri might need to up his game.</p>
+            <button onclick="resetGame()">Play Again? (If you dare)</button>
+        </div>
+    </div>
+
+    <script>
+        let currentStage = 0;
+        let clicksOnMovingButton = 0;
+        let tosAgreed = false; 
+        let screamButtonClicks = 0; 
+        let fakeTimerInterval;
+        let fakeTimerSeconds = 300; 
+        let fakeTimerPenalties = 0;
+        let originalTosContentHTML = ""; // To store ToS HTML for re-display
+
+        const narratorTextElement = document.getElementById('narrator-text');
+        const interactiveArea = document.getElementById('interactive-area');
+        const finalStatusArea = document.getElementById('status-reveal-area');
+        const finalStatusMessage = document.getElementById('final-status-message');
+        const gameTitle = document.getElementById('game-title');
+
+        const narratorLines = [
+            // Stage 0: Initial Button
+            "Ah, another hopeful soul. You want Uri Rosen's status, eh? Well, it's not just lying around, you know. This is top-secret stuff!",
+            // Stage 1: Moving Button
+            "Whoa there, speedy! Did you *really* think it would be that easy? This button has places to be!",
+            // Stage 2: Wrong Button
+            "Okay, okay, you're persistent. I'll give you two options. One is the REAL status. The other... well, let's just say you don't want the other.",
+            // Stage 3: NEW - Terms of Service (Part 1)
+            "Before we proceed with such a sensitive operation, you MUST agree to the terms and conditions. They are... extensive. And legally binding. Probably. Read them carefully (or don't, I'm a narrator not a cop).",
+            // Stage 4: Clickable Narrator Text ("that")
+            "Clever. But Uri locked this status tighter than a drum! The key is... well, I'm not telling you <span class='clickable-text' onclick='solveOriginalStage3()'>that</span> particular secret.",
+            // Stage 5: Fake Loading Bar
+            "Fine. System Update required to display status. Please wait... This might take a while. Or forever. Who knows?",
+            // Stage 6: Big Red Button
+            "Alright, I'm getting tired of this. See this BIG RED BUTTON? Whatever you do, DO NOT PRESS IT. Uri specifically told me. It probably launches... kittens. Yeah, evil, status-stealing kittens.",
+            // Stage 7: NEW - Fake Timer
+            "Right, to access the next layer, a mandatory 5-minute security scan is required. Please wait. And please, DO NOT click the timer display, it messes with the calibration and adds a time penalty. Seriously.",
+            // Stage 8: Find in Code
+            "Gah! You pressed it! Now look what you've done! The system is haywire! The status is lost in... the code! Find `s3cr3t_St@tuS_vAr1able` if you can even read this mess.",
+            // Stage 9: Sound Check (no sound)
+            "My circuits! You actually found it?! Okay, quick sound check. My audio diagnostics are fried. Click the button to play a test tone. Make sure your volume is UP.",
+            // Stage 10: NEW - Scream
+            "Hmm, no tone? Your speakers must be broken. Or... wait. This next part requires... vocal affirmation. You need to REALLY want it. Scream 'I WANT TO SEE URI'S STATUS!' at your screen, then click the button below.",
+            // Stage 11: Draggable Popup (drag off-screen)
+            "Your (presumed) dedication is noted. But now, an URGENT system alert! This can't be good. It's... sticky.", // Adjusted line for context
+            // Stage 12: Magic Word (click "magic")
+            "Phew, that was annoying. Even for me. Okay, new security protocol. To prove you're not a bot, type the <span class='clickable-text' onclick='solveOriginalStage9()'>magic</span> word into the box. The magic word is 'abracadabra'. Obviously.",
+            // Stage 13: Color Change
+            "Not bad. For a human. Now, Uri's status is very... particular about aesthetics. It only reveals itself when the TRUE background color is selected. Choose wisely.",
+            // Stage 14: NEW - Fake WhatsApp
+            "You have an eye for color! Or you're just clicking randomly. Anyway, I'm almost out of tricks. Hold on... I'm getting a message. Looks... urgent? Or maybe just spam.",
+            // Stage 15: Squirrel Distraction (click narrator text about squirrel)
+            "My circuits are frazzled. You're good. Almost *too* good. But can you resist this? LOOK! <span class='clickable-text' onclick='solveOriginalStage11Distraction()'>A SQUIRREL!</span> (Yes, a real, actual, clickable part of the text that is definitely not the squirrel image itself).",
+            // Stage 16: Final "Are you sure?"
+            "ARGH! You didn't fall for the squirrel?! IMPOSSIBLE! Fine. You're at the final gate. Are you absolutely, positively, 100% sure you want this status? It might change your life. Or not.",
+            // Stage 17: Finale
+            "Unbelievable. You actually navigated Uri Rosen's labyrinth of digital despair. I... I'm speechless."
+        ];
+
+        function updateNarrator(text, allowHTML = true) {
+            if (allowHTML) {
+                narratorTextElement.innerHTML = text;
+            } else {
+                narratorTextElement.textContent = text;
+            }
+        }
+
+        function advanceStage() {
+            currentStage++;
+            console.log("Advanced to stage: " + currentStage);
+            if (fakeTimerInterval) {
+                clearInterval(fakeTimerInterval);
+                fakeTimerInterval = null;
+            }
+            const whatsappPopup = document.getElementById('fake-whatsapp-popup');
+            if (whatsappPopup) {
+                whatsappPopup.remove();
+            }
+            narratorTextElement.onclick = null;
+            originalTosContentHTML = ""; // Clear stored ToS for other stages
+
+            loadStage(currentStage);
+        }
+
+        function clearInteractiveArea() {
+            interactiveArea.innerHTML = '';
+        }
+        
+        function makeDraggable(popup, dragger) {
+            let offsetX, offsetY, isDragging = false;
+            let lastMoveX = 0, lastMoveY = 0, lastMoveTime = 0;
+            let velocityX = 0, velocityY = 0;
+
+            dragger.onmousedown = (e) => {
+                e.preventDefault(); // Prevents text selection issues on dragger
+                isDragging = true;
+                offsetX = e.clientX - popup.offsetLeft;
+                offsetY = e.clientY - popup.offsetTop;
+                dragger.style.cursor = 'grabbing';
+                document.body.style.userSelect = 'none';
+
+                lastMoveX = e.clientX;
+                lastMoveY = e.clientY;
+                lastMoveTime = Date.now();
+                velocityX = 0; 
+                velocityY = 0;
+                popup.style.transition = ''; // Clear any previous animation transition
+            };
+
+            document.onmousemove = (e) => {
+                if (!isDragging) return;
+                e.preventDefault();
+                let now = Date.now();
+                let dt = now - lastMoveTime;
+
+                if (dt > 0) {
+                    velocityX = (e.clientX - lastMoveX) / dt;
+                    velocityY = (e.clientY - lastMoveY) / dt;
+                }
+                
+                lastMoveX = e.clientX;
+                lastMoveY = e.clientY;
+                lastMoveTime = now;
+
+                popup.style.left = (e.clientX - offsetX) + 'px';
+                popup.style.top = (e.clientY - offsetY) + 'px';
+            };
+
+            document.onmouseup = (e) => {
+                if (isDragging) {
+                    isDragging = false;
+                    dragger.style.cursor = 'grab';
+                    document.body.style.userSelect = 'auto';
+
+                    if (currentStage === 11) { // Draggable Popup Stage
+                        let flingMultiplier = 200; // Adjusted for more noticeable fling
+                        let duration = 0.4; // seconds
+
+                        let finalVelocityX = velocityX;
+                        let finalVelocityY = velocityY;
+
+                        if (Date.now() - lastMoveTime > 100) { // If mouse was still for >100ms
+                            finalVelocityX = 0;
+                            finalVelocityY = 0;
+                        }
+                        
+                        let targetX = popup.offsetLeft + finalVelocityX * flingMultiplier;
+                        let targetY = popup.offsetTop + finalVelocityY * flingMultiplier;
+
+                        popup.style.transition = `left ${duration}s ease-out, top ${duration}s ease-out`;
+                        popup.style.left = targetX + 'px';
+                        popup.style.top = targetY + 'px';
+
+                        setTimeout(() => {
+                            popup.style.transition = ''; 
+                            const rect = popup.getBoundingClientRect();
+                            const gameContainerRect = document.getElementById('game-container').getBoundingClientRect();
+                            // Check if it's outside the game container viewport effectively
+                            if (rect.right < gameContainerRect.left -10 || 
+                                rect.left > gameContainerRect.right + 10 || 
+                                rect.bottom < gameContainerRect.top - 50 || // more lenient for bottom
+                                rect.top > gameContainerRect.bottom + 50) { // more lenient for top
+                                popup.remove();
+                                updateNarrator("Wooosh! You yeeted it into the digital void! Nicely done.");
+                                advanceStage();
+                            } else {
+                                 updateNarrator("Not quite off-screen. Give it a more vigorous toss next time! Or drag it closer to an edge before releasing.");
+                            }
+                        }, duration * 1000);
+                    }
+                }
+            };
+        }
+
+
+        function loadStage(stage) {
+            clearInteractiveArea();
+            narratorTextElement.onclick = null; 
+            updateNarrator(narratorLines[stage]);
+            tosAgreed = false; 
+
+            switch (stage) {
+                case 0: // Initial Button
+                    const startButton = document.createElement('button');
+                    startButton.textContent = "Get Uri's Status!";
+                    startButton.onclick = advanceStage;
+                    interactiveArea.appendChild(startButton);
+                    break;
+
+                case 1: // Moving Button
+                    const movingButton = document.createElement('button');
+                    movingButton.id = 'moving-button';
+                    movingButton.textContent = "Catch Me If You Can!";
+                    clicksOnMovingButton = 0;
+                    
+                    const moveIt = () => {
+                        const gameRect = interactiveArea.getBoundingClientRect();
+                        if (movingButton.offsetWidth === 0 || gameRect.width === 0) {
+                            setTimeout(moveIt, 50); 
+                            return;
+                        }
+                        const x = Math.random() * (gameRect.width - movingButton.offsetWidth);
+                        const y = Math.random() * (gameRect.height - movingButton.offsetHeight);
+                        movingButton.style.left = x + 'px';
+                        movingButton.style.top = y + 'px';
+                    };
+
+                    movingButton.onmouseover = moveIt;
+                    movingButton.onclick = () => {
+                        clicksOnMovingButton++;
+                        if (clicksOnMovingButton < 3) {
+                            updateNarrator(`Ouch! Got me! Only ${3-clicksOnMovingButton} more like that and I *might* give up.`);
+                            moveIt(); 
+                        } else {
+                            updateNarrator("Alright, alright! You're too fast. Or I'm too slow. Whatever. Next!");
+                            advanceStage();
+                        }
+                    };
+                    interactiveArea.appendChild(movingButton);
+                    setTimeout(moveIt, 0); 
+                    break;
+
+                case 2: // Wrong Button
+                    const realButton = document.createElement('button');
+                    realButton.textContent = "The REAL Status Button";
+                    realButton.onclick = () => {
+                        updateNarrator("Psych! Did you really trust a button named 'REAL'? Tsk tsk. Try again.");
+                        gameTitle.textContent += " ... Liar!";
+                        setTimeout(() => gameTitle.textContent = "Uri Rosen's Status Chase", 1500);
+                    };
+                    interactiveArea.appendChild(realButton);
+
+                    const fakeButton = document.createElement('button');
+                    fakeButton.textContent = "Definitely NOT The Status";
+                    fakeButton.style.borderColor = "#ff5555";
+                    fakeButton.onclick = () => {
+                        updateNarrator("Hmm, you chose the 'NOT' button? Suspicious... but CORRECT! You're learning.");
+                        advanceStage();
+                    };
+                    interactiveArea.appendChild(fakeButton);
+                    break;
+
+                case 3: // NEW - Terms of Service
+                    const tosDiv = document.createElement('div');
+                    tosDiv.id = 'tos-container-original'; // Unique ID for the original ToS display
+                    let tosTextContent = "TERMS OF SERVICE FOR URI ROSEN'S STATUS CHASE PROTOCOL\n\n";
+                    tosTextContent += "Preamble: By attempting to access Uri Rosen's status, you (hereinafter 'The Seeker') agree to the following terms, which are numerous, convoluted, and probably not enforceable in any real court of law, but we're in a game, so suck it up.\n\n";
+                    for (let i=1; i<=15; i++) {
+                        tosTextContent += `Section ${i}: Random Legal Gibberish Clause ${i}.\n`;
+                        tosTextContent += `   Subsection A: The Seeker acknowledges that the Narrator is always right, even when obviously lying.\n`;
+                        if (i === 7) {
+                             tosTextContent += `   Subsection B: The Seeker understands that pursuit of the Status is at their own risk of mild amusement or frustration.\n`;
+                             tosTextContent += `      Paragraph 1: All snacks consumed during status acquisition are the Seeker's responsibility.\n`;
+                             tosTextContent += `      Paragraph 2: Water is wet. The sky is usually up.\n`;
+                             tosTextContent += `      Paragraph 3: The official snack of the Status Obfuscation Protocol is 'digitally-rendered cheese puffs'. This is vital information.\n`;
+                        }
+                        tosTextContent += `   Subsection C: Any resemblance to actual persons, living or dead, or actual events is purely coincidental, or a figment of your imagination.\n\n`;
+                    }
+                    tosTextContent += "Final Clause: By checking the box, you agree that you might have read this, or at least scrolled past it. Good luck, Seeker.\n";
+                    tosDiv.textContent = tosTextContent;
+                    originalTosContentHTML = tosDiv.outerHTML; // Store the HTML for later
+                    interactiveArea.appendChild(tosDiv);
+
+
+                    const checkboxContainer = document.createElement('div');
+                    checkboxContainer.id = 'tos-checkbox-container';
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.id = 'tos-agree';
+                    const label = document.createElement('label');
+                    label.htmlFor = 'tos-agree';
+                    label.textContent = " I have scrolled past and/or skimmed the terms and conditions.";
+                    checkboxContainer.appendChild(checkbox);
+                    checkboxContainer.appendChild(label);
+                    interactiveArea.appendChild(checkboxContainer);
+
+                    const proceedButton = document.createElement('button');
+                    proceedButton.id = 'tos-proceed-button';
+                    proceedButton.textContent = "Proceed (If You Dare)";
+                    proceedButton.disabled = true;
+                    interactiveArea.appendChild(proceedButton);
+
+                    checkbox.onchange = () => {
+                        proceedButton.disabled = !checkbox.checked;
+                    };
+
+                    proceedButton.onclick = () => {
+                        if (checkbox.checked) {
+                            tosAgreed = true;
+                            // Hide ToS elements instead of removing them completely yet
+                            document.getElementById('tos-container-original').classList.add('hidden');
+                            document.getElementById('tos-checkbox-container').classList.add('hidden');
+                            document.getElementById('tos-proceed-button').classList.add('hidden');
+
+                            updateNarrator("Excellent. Just one quick security question to ensure you've absorbed the critical details. What is the official snack of the Status Obfuscation Protocol as per Section 7, Subsection B, Paragraph 3?");
+                            
+                            const questionArea = document.createElement('div');
+                            questionArea.id = 'tos-question-area';
+                            const answerInput = document.createElement('input');
+                            answerInput.type = 'text';
+                            answerInput.placeholder = "Your answer here...";
+                            const submitAnswerButton = document.createElement('button');
+                            submitAnswerButton.textContent = "Submit Answer";
+
+                            submitAnswerButton.onclick = () => {
+                                const correctAnswer = "digitally-rendered cheese puffs";
+                                if (answerInput.value.toLowerCase().trim() === correctAnswer) {
+                                    updateNarrator("Correct! You either have an amazing memory for useless details or you're very good at Ctrl+F. Either way, impressive!");
+                                    advanceStage();
+                                } else {
+                                    updateNarrator("Incorrect. The critical snack detail eludes you! Would you like to <span class='clickable-text' onclick='showToSForReview()'>review the ToS document again</span>? Otherwise, try guessing the answer once more.");
+                                    answerInput.value = '';
+                                }
+                            };
+                            questionArea.appendChild(answerInput);
+                            questionArea.appendChild(submitAnswerButton);
+                            interactiveArea.appendChild(questionArea); // Append question below hidden ToS
+                        }
+                    };
+                    break;
+
+                case 4: // Original Stage 3: Hidden Clickable Text in Narrator ("that")
+                    const dummyButtonSt3 = document.createElement('button');
+                    dummyButtonSt3.textContent = "I'm Stumped...";
+                    dummyButtonSt3.onclick = () => {
+                        updateNarrator("Stumped already? Pathetic. The answer is usually right in front of your <span class='clickable-text' onclick='solveOriginalStage3()'>face</span>... or, in this case, my text.");
+                    };
+                    interactiveArea.appendChild(dummyButtonSt3);
+                    break;
+                
+                case 5: // Original Stage 4: Fake Loading Bar
+                    const barContainer = document.createElement('div');
+                    barContainer.id = 'loading-bar-container';
+                    const barProgress = document.createElement('div');
+                    barProgress.id = 'loading-bar-progress';
+                    barContainer.appendChild(barProgress);
+                    interactiveArea.appendChild(barContainer);
+
+                    setTimeout(() => { barProgress.style.width = '99%'; }, 100);
+                    setTimeout(() => {
+                        if (currentStage === 5) updateNarrator("Any day now... This is premium high-latency loading. Or... maybe the bar itself is clickable? Just a thought.");
+                    }, 4000);
+                    
+                    barProgress.onclick = () => {
+                        if (currentStage === 5) {
+                            updateNarrator("Aha! You poked the progress! Did you think that would actually DO something? ... Oh, wait. It did. Whoops.");
+                            advanceStage();
+                        }
+                    };
+                    break;
+
+                case 6: // Original Stage 5: Don't Press The Button
+                    const bigRedButton = document.createElement('button');
+                    bigRedButton.id = 'big-red-button';
+                    bigRedButton.textContent = "DO NOT PRESS";
+                    bigRedButton.onclick = () => {
+                        updateNarrator("YOU PRESSED IT! I TOLD YOU NOT TO! NOW THE KITTENS... oh wait, wrong button. This one just advances the game. My bad.");
+                        advanceStage();
+                    };
+                    interactiveArea.appendChild(bigRedButton);
+                    break;
+
+                case 7: // NEW - Fake Timer
+                    fakeTimerSeconds = 300; 
+                    fakeTimerPenalties = 0;
+                    const timerDisplay = document.createElement('div');
+                    timerDisplay.id = 'fake-timer-display';
+                    
+                    const formatTime = (seconds) => {
+                        const minutes = Math.floor(seconds / 60);
+                        const secs = seconds % 60;
+                        return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+                    };
+                    timerDisplay.textContent = formatTime(fakeTimerSeconds);
+                    interactiveArea.appendChild(timerDisplay);
+                    
+                    const penaltyMessage = document.createElement('p');
+                    penaltyMessage.textContent = "Patience is a virtue. Clicking adds 60 seconds.";
+                    interactiveArea.appendChild(penaltyMessage);
+
+                    timerDisplay.onclick = () => {
+                        if (currentStage !== 7) return;
+                        fakeTimerSeconds += 60;
+                        fakeTimerPenalties++;
+                        timerDisplay.textContent = formatTime(fakeTimerSeconds);
+                        if (fakeTimerPenalties === 1) {
+                             updateNarrator("Hey! I said don't click it! Now you have to wait longer. Or... is there <span class='clickable-text' onclick='solveFakeTimer()'>another way</span>?");
+                        } else if (fakeTimerPenalties < 4) {
+                            updateNarrator(`Seriously? That's ${fakeTimerPenalties} clicks. You're just making it worse for yourself. Or are you discovering the <span class='clickable-text' onclick='solveFakeTimer()'>true path</span>?`);
+                        } else {
+                             updateNarrator(`Okay, you REALLY like clicking that timer. Fine. The secret is out. Or rather, the <span class='clickable-text' onclick='solveFakeTimer()'>solution</span> is in this sentence.`);
+                        }
+                    };
+
+                    fakeTimerInterval = setInterval(() => {
+                        if (currentStage !== 7) {
+                             clearInterval(fakeTimerInterval);
+                             return;
+                        }
+                        fakeTimerSeconds--;
+                        timerDisplay.textContent = formatTime(fakeTimerSeconds);
+                        if (fakeTimerSeconds <= 0) {
+                            clearInterval(fakeTimerInterval);
+                            updateNarrator("Wow, you actually waited! Or left this tab open. I'm impressed by your patience. Or your multi-tasking. But that wasn't the <span class='clickable-text' onclick='solveFakeTimer()'>intended solution</span>, you know.");
+                        }
+                    }, 1000);
+                    
+                    setTimeout(() => {
+                        if (currentStage === 7 && fakeTimerPenalties === 0 && fakeTimerSeconds > 0) { // Check timer still running
+                             updateNarrator(narratorLines[7] + " This is taking ages... maybe there's a <span class='clickable-text' onclick='solveFakeTimer()'>shortcut</span> hidden in my words?");
+                        }
+                    }, 10000);
+                    break;
+
+
+                case 8: // Original Stage 6: The Code
+                    const codeArea = document.createElement('div');
+                    codeArea.id = 'fake-code-area';
+                    let fakeCode = `function initializeStatusProtocol() {\n  let status = "Highly Classified";\n  const securityLevel = 9001;\n  // TODO: Add more obfuscation\n  for (let i=0; i<100; i++) {\n    console.log("Access Denied: " + i);\n  }\n  var s3cr3t_St<span class='clickable-text' onclick='solveOriginalStage6()'>@</span>tuS_vAr1able = "The cake is a lie";\n  return status;\n}\n// End of secure module\n// Do not distribute this code, Uri will be mad!`;
+                    for(let i=0; i<10; i++) {
+                        fakeCode += `\n// Random comment line ${Math.random().toString(36).substring(7)}`;
+                        fakeCode += `\nlet var_${Math.random().toString(36).substring(7)} = "${Math.random()}";`;
+                    }
+                    codeArea.innerHTML = fakeCode;
+                    interactiveArea.appendChild(codeArea);
+                    break;
+
+                case 9: // Original Stage 7: Sound Check
+                    const soundButton = document.createElement('button');
+                    soundButton.textContent = "Play Test Tone";
+                    soundButton.onclick = () => {
+                        updateNarrator("Hmm, I didn't hear anything. Must be broken. OR... perhaps the real test was your willingness to click. You pass! (This time.)");
+                        advanceStage();
+                    };
+                    interactiveArea.appendChild(soundButton);
+                    break;
+
+                case 10: // NEW - Scream Stage
+                    screamButtonClicks = 0;
+                    const screamInstruction = document.createElement('p');
+                    screamInstruction.textContent = "Are you ready to vocally commit?";
+                    interactiveArea.appendChild(screamInstruction);
+
+                    const screamButton = document.createElement('button');
+                    screamButton.textContent = "I Screamed It!";
+                    interactiveArea.appendChild(screamButton);
+
+                    screamButton.onclick = () => {
+                        screamButtonClicks++;
+                        if (screamButtonClicks === 1) {
+                            updateNarrator("Louder! I can't hear you through the internets! My audio sensors are very rudimentary.");
+                        } else if (screamButtonClicks === 2) {
+                            updateNarrator("Still not convinced. One more time, with GUSTO!");
+                        } else {
+                            updateNarrator("Alright, alright. I'm *still* not sure I believe you. Let's make this official. I need microphone access to verify your... enthusiasm. Click below to attempt microphone verification.");
+                            screamButton.textContent = "Attempt Microphone Verification";
+                            screamButton.onclick = async () => {
+                                try {
+                                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                                    stream.getTracks().forEach(track => track.stop()); 
+                                    updateNarrator("Mic access GRANTED! Excellent. Now, imagine you've just said 'I WANT TO SEE URI'S STATUS!' very loudly. Click below to confirm your vocal commitment.");
+                                    clearInteractiveArea();
+                                    const finalScreamConfirmButton = document.createElement('button');
+                                    finalScreamConfirmButton.textContent = "I've Vocally Confirmed My Desire!";
+                                    finalScreamConfirmButton.onclick = () => {
+                                        updateNarrator("Fantastic! Your (presumed) scream has echoed through the digital void. Proceed!");
+                                        advanceStage();
+                                    };
+                                    interactiveArea.appendChild(finalScreamConfirmButton);
+
+                                } catch (err) {
+                                    console.error("Microphone access denied or failed:", err);
+                                    updateNarrator("Mic access FAILED or was DENIED. Tsk. Typical. Stage fright? Luckily, Uri, in his infinite wisdom, included a <span class='clickable-text' onclick='solveScreamStageBypass()'>Silent Declaration of Screaming Intent</span> form. Click the highlighted text in this very sentence.");
+                                    screamButton.disabled = true;
+                                    screamButton.textContent = "Mic Failed";
+                                }
+                            };
+                        }
+                    };
+                    break;
+                
+                case 11: // Original Stage 8 -> Now Draggable Popup
+                    const popup = document.createElement('div');
+                    popup.id = 'fake-popup';
+                    const dragger = document.createElement('div');
+                    dragger.id = 'fake-popup-dragger';
+                    dragger.textContent = 'SYSTEM ALERT - Drag Me Hard!';
+                    const content = document.createElement('div');
+                    content.id = 'fake-popup-content';
+                    content.innerHTML = "Error XF86: Status integrity compromised!<br>Cannot display status.<br>This system is now property of Meow-Corp. Fling me away!";
+                    const okButton = document.createElement('button');
+                    okButton.textContent = "OK (but why?)";
+                    okButton.onclick = () => {
+                        updateNarrator("Clicking 'OK' won't make it go away, silly. This problem requires... a more forceful eviction. Try dragging and flinging it off-screen.");
+                        popup.style.top = (Math.random() * 50 + 25) + '%'; 
+                        popup.style.left = (Math.random() * 50 + 25) + '%';
+                    };
+                    popup.appendChild(dragger);
+                    popup.appendChild(content);
+                    popup.appendChild(okButton);
+                    interactiveArea.appendChild(popup); 
+                    makeDraggable(popup, dragger);
+                    break;
+
+                case 12: // Original Stage 9: Type The Magic Word (trick: click "magic")
+                    const inputLabel = document.createElement('p');
+                    inputLabel.textContent = "The instruction is above, in my eloquent speech. Type the word below.";
+                    const inputField = document.createElement('input');
+                    inputField.type = 'text';
+                    inputField.placeholder = "Type 'abracadabra' as instructed (or is it?)";
+                    inputField.oninput = () => {
+                        if (inputField.value.toLowerCase() === 'abracadabra') {
+                            updateNarrator("You typed 'abracadabra'. Correct word! But to pass, you need to identify and interact with the *truly* <span class='clickable-text' onclick='solveOriginalStage9()'>magic</span> part of my instructions.");
+                        } else if (inputField.value.length > 0) {
+                             updateNarrator("Typing random things? That's not very magical. The word you need to type is 'abracadabra', but the solution is... <span class='clickable-text' onclick='solveOriginalStage9()'>elsewhere</span> in my speech.");
+                        }
+                    };
+                    interactiveArea.appendChild(inputLabel);
+                    interactiveArea.appendChild(inputField);
+                    break;
+
+                case 13: // Original Stage 10: Color Change
+                    const colors = ['#ff0000', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#1a1a1a']; 
+                    const colorContainer = document.createElement('div');
+                    updateNarrator(narratorLines[stage] + " The original dark theme was quite nice, wasn't it?");
+
+                    colors.forEach((color) => {
+                        const square = document.createElement('div');
+                        square.className = 'color-square';
+                        square.style.backgroundColor = color;
+                        square.onclick = () => {
+                            document.body.style.backgroundColor = color;
+                            if (color === '#1a1a1a') { 
+                                updateNarrator("Ah, back to classic dark mode! You have excellent taste. Or you just got lucky. The status appreciates this return to form.");
+                                advanceStage();
+                            } else {
+                                updateNarrator(`Hmm, ${color}. Interesting choice. But not *the* choice. Keep trying! The true color is the one we started with.`);
+                            }
+                        };
+                        colorContainer.appendChild(square);
+                    });
+                    interactiveArea.appendChild(colorContainer);
+                    break;
+                
+                case 14: // NEW - Fake WhatsApp
+                    const whatsappPopup = document.createElement('div');
+                    whatsappPopup.id = 'fake-whatsapp-popup';
+                    whatsappPopup.innerHTML = `
+                        <div id="whatsapp-header">
+                            <span id="whatsapp-contact">Definitely_Not_Uri_R</span>
+                            <span id="whatsapp-close">×</span>
+                        </div>
+                        <div id="whatsapp-message-area">
+                            <div id="whatsapp-message-bubble">
+                                Psst! I hear you're looking for my status. The real secret is to count to 10 and then click the greenest button you see. Don't tell the Narrator I told you! Srsly.
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(whatsappPopup); 
+                    
+                    whatsappPopup.querySelector('#whatsapp-close').onclick = () => {
+                        whatsappPopup.remove();
+                        updateNarrator("Message closed. Was it helpful? Or just another layer of Uri's classic misdirection? Focus on my words, seeker. The real path is often <span class='clickable-text' onclick='solveWhatsAppStage()'>subtler</span>.");
+                    };
+
+                    setTimeout(() => {
+                        if (currentStage === 14 && document.getElementById('fake-whatsapp-popup')) {
+                             updateNarrator(narratorLines[14] + " That message is still there, isn't it? Such <span class='clickable-text' onclick='solveWhatsAppStage()'>distractions</span> are common in the status chase.");
+                        }
+                    }, 7000);
+                    break;
+
+                case 15: // Original Stage 11 -> Now Squirrel Distraction
+                    const squirrelImg = document.createElement('img');
+                    squirrelImg.id = 'squirrel-gif';
+                    // For local image:
+                    // 1. Save your squirrel.gif in the same directory as this HTML file.
+                    // 2. Change the src below to: squirrelImg.src = 'squirrel.gif';
+                    // Or if in an 'images' subfolder: squirrelImg.src = 'images/squirrel.gif';
+                    squirrelImg.src = 'https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExZGpuY2oxeG0waDh6eW5xdGwzdWRvdHl1NnVoaXN0ZmR1b3dxYTVhZCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/5K7ngCtszoxxbaBieC/giphy.gif'; 
+                    squirrelImg.alt = 'A distracting squirrel';
+                    interactiveArea.appendChild(squirrelImg);
+                    // The clickable span "A SQUIRREL!" in narratorLines[15] is the only way.
+                    break;
+
+                case 16: // Original Stage 12: Final "Are you sure?"
+                    let confirmationCount = 0;
+                    const confirmButton = document.createElement('button');
+                    confirmButton.textContent = "Claim Status";
+
+                    confirmButton.onclick = () => {
+                        confirmationCount++;
+                        switch(confirmationCount) {
+                            case 1:
+                                updateNarrator("Are you absolutely sure? This status is... potent.");
+                                confirmButton.textContent = "Yes, I'm Sure!";
+                                break;
+                            case 2:
+                                updateNarrator("Really, really sure? No turning back. This could be life-altering.");
+                                confirmButton.textContent = "Positive!";
+                                break;
+                            case 3:
+                                updateNarrator("LAST CHANCE! Abandon all hope, ye who enter here... or, y'know, click again.");
+                                confirmButton.textContent = "GIMME THE STATUS!";
+                                break;
+                            default:
+                                showFinalStatus();
+                                break;
+                        }
+                    };
+                    interactiveArea.appendChild(confirmButton);
+                    break;
+
+                default: // Should be Stage 17 (Finale)
+                    showFinalStatus();
+                    break;
+            }
+        }
+
+        // Solution functions for specific stages needing direct calls from HTML spans
+        function solveOriginalStage3() { // Was Stage 3, now Stage 4 ("that")
+            if (currentStage === 4) {
+                updateNarrator("You clicked 'that'! You're not supposed to click 'that'! Fine, you're more perceptive than you look.");
+                advanceStage();
+            }
+        }
+        function solveOriginalStage6() { // Was Stage 6, now Stage 8 (code "@")
+            if (currentStage === 8) {
+                updateNarrator("Aha! You found the slightly-off character in the variable name! My typo, your treasure. Or something.");
+                advanceStage();
+            }
+        }
+        function solveOriginalStage9() { // Was Stage 9, now Stage 12 ("magic")
+            if (currentStage === 12) {
+                updateNarrator("You clicked 'magic'! That's the *real* magic word here. Clever clogs.");
+                advanceStage();
+            }
+        }
+        function solveOriginalStage11Distraction() { // Was Stage 11, now Stage 15 ("A SQUIRREL!")
+             if (currentStage === 15) {
+                updateNarrator("You clicked my text ABOUT the squirrel! You weren't distracted at all! You monster! Fine, proceed.");
+                advanceStage();
+            }
+        }
+
+        // --- New Stage Solution Functions ---
+        function showToSForReview() { // For Stage 3 (ToS Question)
+            if (currentStage !== 3) return;
+            const tosQuestionArea = document.getElementById('tos-question-area');
+            if (!tosQuestionArea) return;
+
+            // Remove any previously shown review ToS to prevent duplicates
+            const existingReview = document.getElementById('tos-document-display-area');
+            if (existingReview) existingReview.remove();
+            
+            // Create and insert the ToS review display
+            const reviewDiv = document.createElement('div');
+            reviewDiv.id = 'tos-document-display-area'; // Give it an ID for potential removal/check
+            reviewDiv.innerHTML = originalTosContentHTML; // Use stored original ToS
+            reviewDiv.classList.remove('hidden'); // Ensure it's visible
+
+            // Insert the ToS review before the question area
+            tosQuestionArea.parentNode.insertBefore(reviewDiv, tosQuestionArea);
+            updateNarrator("The Terms of Service document has re-appeared above the question. Happy hunting for that snack info!");
+        }
+
+        function solveFakeTimer() { // For new Stage 7
+            if (currentStage === 7) {
+                if (fakeTimerInterval) clearInterval(fakeTimerInterval);
+                updateNarrator("Aha! You found the hidden eject button in my rambling! Patience is for those who don't read the fine print... or my text carefully. Well done.");
+                advanceStage();
+            }
+        }
+        
+        function solveScreamStageBypass() { // For new Stage 10 (mic fail path)
+            if (currentStage === 10) {
+                updateNarrator("The Silent Declaration of Screaming Intent has been duly noted (and ignored, mostly). But rules are rules, and clicking that was the rule. Onwards!");
+                advanceStage();
+            }
+        }
+
+        function solveWhatsAppStage() { // For new Stage 14
+            if (currentStage === 14) {
+                const whatsappPopup = document.getElementById('fake-whatsapp-popup');
+                if (whatsappPopup) whatsappPopup.remove();
+                updateNarrator("Indeed! Ignoring blatant distractions IS the key. Uri's attempts at misdirection are futile against your keen intellect (or lucky clicking).");
+                advanceStage();
+            }
+        }
+
+
+        function showFinalStatus() {
+            clearInteractiveArea();
+            narratorTextElement.onclick = null;
+            if (currentStage !== narratorLines.length -1) currentStage = narratorLines.length -1; 
+            updateNarrator(narratorLines[narratorLines.length-1]); 
+            finalStatusMessage.textContent = "Uri Rosen's actual status is: 'Dont Click On Every Link You See 😉'";
+            finalStatusArea.classList.remove('hidden');
+            gameTitle.textContent = "STATUS REVEALED!";
+        }
+
+        function resetGame() {
+            currentStage = 0;
+            clicksOnMovingButton = 0;
+            tosAgreed = false;
+            screamButtonClicks = 0;
+            if (fakeTimerInterval) {
+                clearInterval(fakeTimerInterval);
+                fakeTimerInterval = null;
+            }
+            fakeTimerSeconds = 300;
+            fakeTimerPenalties = 0;
+            originalTosContentHTML = "";
+
+            const whatsappPopup = document.getElementById('fake-whatsapp-popup');
+            if (whatsappPopup) whatsappPopup.remove();
+            const draggablePopup = document.getElementById('fake-popup');
+            if(draggablePopup) draggablePopup.remove();
+            
+            document.onmousemove = null; // Clean up global listeners just in case
+            document.onmouseup = null;   // (makeDraggable should handle its own, but belt-and-suspenders)
+
+
+            finalStatusArea.classList.add('hidden');
+            gameTitle.textContent = "Uri Rosen's Status Chase";
+            document.body.style.backgroundColor = '#1a1a1a'; 
+            document.body.style.userSelect = 'none'; 
+            
+            narratorTextElement.onclick = null; 
+
+            loadStage(currentStage);
+        }
+
+        // Initial Load
+        loadStage(currentStage);
+
+    </script>
+</body>
+</html>
