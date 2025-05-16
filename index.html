@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Uri Rosen's Status Chase - Enhanced Edition v2</title>
+    <title>Uri Rosen's Status</title>
     <style>
         body {
             font-family: 'Courier New', Courier, monospace;
@@ -256,17 +256,8 @@
     </style>
 </head>
 <body>
-    <!--
-        For local squirrel image:
-        1. Save your squirrel GIF (e.g., "squirrel.gif") in the same directory as this HTML file,
-           or in a subdirectory (e.g., "images/squirrel.gif").
-        2. In the JavaScript `loadStage` function, for `case 15` (the squirrel stage),
-           change `squirrelImg.src` from the Giphy URL to your local path:
-           e.g., `squirrelImg.src = 'squirrel.gif';`
-           or `squirrelImg.src = 'images/squirrel.gif';`
-    -->
     <div id="game-container">
-        <h1 id="game-title">Uri Rosen's Status Chase</h1>
+        <h1 id="game-title">Uri Rosen's Status</h1>
         <div id="narrator-box">
             <p id="narrator-text">Initializing status obfuscation protocol...</p>
         </div>
@@ -289,13 +280,20 @@
         let fakeTimerInterval;
         let fakeTimerSeconds = 300; 
         let fakeTimerPenalties = 0;
-        let originalTosContentHTML = ""; // To store ToS HTML for re-display
+        let originalTosContentHTML = ""; 
 
         const narratorTextElement = document.getElementById('narrator-text');
         const interactiveArea = document.getElementById('interactive-area');
         const finalStatusArea = document.getElementById('status-reveal-area');
         const finalStatusMessage = document.getElementById('final-status-message');
         const gameTitle = document.getElementById('game-title');
+
+        // Store event handlers for cleanup
+        let dragMouseMoveHandler = null;
+        let dragMouseUpHandler = null;
+        let dragTouchMoveHandler = null;
+        let dragTouchEndHandler = null;
+
 
         const narratorLines = [
             // Stage 0: Initial Button
@@ -321,7 +319,7 @@
             // Stage 10: NEW - Scream
             "Hmm, no tone? Your speakers must be broken. Or... wait. This next part requires... vocal affirmation. You need to REALLY want it. Scream 'I WANT TO SEE URI'S STATUS!' at your screen, then click the button below.",
             // Stage 11: Draggable Popup (drag off-screen)
-            "Your (presumed) dedication is noted. But now, an URGENT system alert! This can't be good. It's... sticky.", // Adjusted line for context
+            "Your (presumed) dedication is noted. But now, an URGENT system alert! This can't be good. It's... sticky.", 
             // Stage 12: Magic Word (click "magic")
             "Phew, that was annoying. Even for me. Okay, new security protocol. To prove you're not a bot, type the <span class='clickable-text' onclick='solveOriginalStage9()'>magic</span> word into the box. The magic word is 'abracadabra'. Obviously.",
             // Stage 13: Color Change
@@ -356,8 +354,7 @@
                 whatsappPopup.remove();
             }
             narratorTextElement.onclick = null;
-            originalTosContentHTML = ""; // Clear stored ToS for other stages
-
+            originalTosContentHTML = ""; 
             loadStage(currentStage);
         }
 
@@ -366,59 +363,78 @@
         }
         
         function makeDraggable(popup, dragger) {
-            let offsetX, offsetY, isDragging = false;
+            let isDragging = false;
+            let initialX, initialY, startPopupX, startPopupY;
             let lastMoveX = 0, lastMoveY = 0, lastMoveTime = 0;
             let velocityX = 0, velocityY = 0;
 
-            dragger.onmousedown = (e) => {
-                e.preventDefault(); // Prevents text selection issues on dragger
+            function getEventPosition(e) {
+                if (e.touches && e.touches.length > 0) {
+                    return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                }
+                return { x: e.clientX, y: e.clientY };
+            }
+
+            function handleDragStart(e) {
+                if (e.type === 'touchstart') { // Prevent default touch action on dragger
+                    e.preventDefault();
+                }
                 isDragging = true;
-                offsetX = e.clientX - popup.offsetLeft;
-                offsetY = e.clientY - popup.offsetTop;
+                const eventPos = getEventPosition(e);
+                
+                initialX = eventPos.x;
+                initialY = eventPos.y;
+                startPopupX = popup.offsetLeft;
+                startPopupY = popup.offsetTop;
+
                 dragger.style.cursor = 'grabbing';
                 document.body.style.userSelect = 'none';
 
-                lastMoveX = e.clientX;
-                lastMoveY = e.clientY;
+                lastMoveX = eventPos.x;
+                lastMoveY = eventPos.y;
                 lastMoveTime = Date.now();
-                velocityX = 0; 
+                velocityX = 0;
                 velocityY = 0;
-                popup.style.transition = ''; // Clear any previous animation transition
-            };
+                popup.style.transition = ''; 
+            }
 
-            document.onmousemove = (e) => {
+            function handleDragMove(e) {
                 if (!isDragging) return;
-                e.preventDefault();
+                e.preventDefault(); // Prevent scrolling while dragging
+
+                const eventPos = getEventPosition(e);
                 let now = Date.now();
                 let dt = now - lastMoveTime;
 
                 if (dt > 0) {
-                    velocityX = (e.clientX - lastMoveX) / dt;
-                    velocityY = (e.clientY - lastMoveY) / dt;
+                    velocityX = (eventPos.x - lastMoveX) / dt;
+                    velocityY = (eventPos.y - lastMoveY) / dt;
                 }
                 
-                lastMoveX = e.clientX;
-                lastMoveY = e.clientY;
+                lastMoveX = eventPos.x;
+                lastMoveY = eventPos.y;
                 lastMoveTime = now;
 
-                popup.style.left = (e.clientX - offsetX) + 'px';
-                popup.style.top = (e.clientY - offsetY) + 'px';
-            };
+                const dx = eventPos.x - initialX;
+                const dy = eventPos.y - initialY;
+                popup.style.left = (startPopupX + dx) + 'px';
+                popup.style.top = (startPopupY + dy) + 'px';
+            }
 
-            document.onmouseup = (e) => {
+            function handleDragEnd(e) {
                 if (isDragging) {
                     isDragging = false;
                     dragger.style.cursor = 'grab';
                     document.body.style.userSelect = 'auto';
 
-                    if (currentStage === 11) { // Draggable Popup Stage
-                        let flingMultiplier = 200; // Adjusted for more noticeable fling
-                        let duration = 0.4; // seconds
+                    if (currentStage === 11) { 
+                        let flingMultiplier = 200; 
+                        let duration = 0.4; 
 
                         let finalVelocityX = velocityX;
                         let finalVelocityY = velocityY;
 
-                        if (Date.now() - lastMoveTime > 100) { // If mouse was still for >100ms
+                        if (Date.now() - lastMoveTime > 100) { 
                             finalVelocityX = 0;
                             finalVelocityY = 0;
                         }
@@ -434,12 +450,12 @@
                             popup.style.transition = ''; 
                             const rect = popup.getBoundingClientRect();
                             const gameContainerRect = document.getElementById('game-container').getBoundingClientRect();
-                            // Check if it's outside the game container viewport effectively
                             if (rect.right < gameContainerRect.left -10 || 
                                 rect.left > gameContainerRect.right + 10 || 
-                                rect.bottom < gameContainerRect.top - 50 || // more lenient for bottom
-                                rect.top > gameContainerRect.bottom + 50) { // more lenient for top
+                                rect.bottom < gameContainerRect.top - 50 || 
+                                rect.top > gameContainerRect.bottom + 50) {
                                 popup.remove();
+                                cleanupDraggableListeners(); // Clean up document listeners
                                 updateNarrator("Wooosh! You yeeted it into the digital void! Nicely done.");
                                 advanceStage();
                             } else {
@@ -448,7 +464,32 @@
                         }, duration * 1000);
                     }
                 }
-            };
+            }
+            
+            dragger.addEventListener('mousedown', handleDragStart);
+            dragger.addEventListener('touchstart', handleDragStart, { passive: false });
+
+            // Store handlers for removal
+            dragMouseMoveHandler = handleDragMove;
+            dragMouseUpHandler = handleDragEnd;
+            dragTouchMoveHandler = handleDragMove; // Same handler for touch
+            dragTouchEndHandler = handleDragEnd;   // Same handler for touch
+
+            document.addEventListener('mousemove', dragMouseMoveHandler);
+            document.addEventListener('mouseup', dragMouseUpHandler);
+            document.addEventListener('touchmove', dragTouchMoveHandler, { passive: false });
+            document.addEventListener('touchend', dragTouchEndHandler);
+        }
+
+        function cleanupDraggableListeners() {
+            if (dragMouseMoveHandler) document.removeEventListener('mousemove', dragMouseMoveHandler);
+            if (dragMouseUpHandler) document.removeEventListener('mouseup', dragMouseUpHandler);
+            if (dragTouchMoveHandler) document.removeEventListener('touchmove', dragTouchMoveHandler);
+            if (dragTouchEndHandler) document.removeEventListener('touchend', dragTouchEndHandler);
+            dragMouseMoveHandler = null;
+            dragMouseUpHandler = null;
+            dragTouchMoveHandler = null;
+            dragTouchEndHandler = null;
         }
 
 
@@ -521,8 +562,8 @@
 
                 case 3: // NEW - Terms of Service
                     const tosDiv = document.createElement('div');
-                    tosDiv.id = 'tos-container-original'; // Unique ID for the original ToS display
-                    let tosTextContent = "TERMS OF SERVICE FOR URI ROSEN'S STATUS CHASE PROTOCOL\n\n";
+                    tosDiv.id = 'tos-container-original'; 
+                    let tosTextContent = "TERMS OF SERVICE FOR URI ROSEN'S STATUS PROTOCOL\n\n";
                     tosTextContent += "Preamble: By attempting to access Uri Rosen's status, you (hereinafter 'The Seeker') agree to the following terms, which are numerous, convoluted, and probably not enforceable in any real court of law, but we're in a game, so suck it up.\n\n";
                     for (let i=1; i<=15; i++) {
                         tosTextContent += `Section ${i}: Random Legal Gibberish Clause ${i}.\n`;
@@ -531,13 +572,13 @@
                              tosTextContent += `   Subsection B: The Seeker understands that pursuit of the Status is at their own risk of mild amusement or frustration.\n`;
                              tosTextContent += `      Paragraph 1: All snacks consumed during status acquisition are the Seeker's responsibility.\n`;
                              tosTextContent += `      Paragraph 2: Water is wet. The sky is usually up.\n`;
-                             tosTextContent += `      Paragraph 3: The official snack of the Status Obfuscation Protocol is 'digitally-rendered cheese puffs'. This is vital information.\n`;
+                             tosTextContent += `      Paragraph 3: The official snack of the Status Obfuscation Protocol is 'Pixel Puffs'. This is vital information.\n`; // MODIFIED SNACK
                         }
                         tosTextContent += `   Subsection C: Any resemblance to actual persons, living or dead, or actual events is purely coincidental, or a figment of your imagination.\n\n`;
                     }
                     tosTextContent += "Final Clause: By checking the box, you agree that you might have read this, or at least scrolled past it. Good luck, Seeker.\n";
                     tosDiv.textContent = tosTextContent;
-                    originalTosContentHTML = tosDiv.outerHTML; // Store the HTML for later
+                    originalTosContentHTML = tosDiv.outerHTML; 
                     interactiveArea.appendChild(tosDiv);
 
 
@@ -566,7 +607,6 @@
                     proceedButton.onclick = () => {
                         if (checkbox.checked) {
                             tosAgreed = true;
-                            // Hide ToS elements instead of removing them completely yet
                             document.getElementById('tos-container-original').classList.add('hidden');
                             document.getElementById('tos-checkbox-container').classList.add('hidden');
                             document.getElementById('tos-proceed-button').classList.add('hidden');
@@ -582,7 +622,7 @@
                             submitAnswerButton.textContent = "Submit Answer";
 
                             submitAnswerButton.onclick = () => {
-                                const correctAnswer = "digitally-rendered cheese puffs";
+                                const correctAnswer = "pixel puffs"; // MODIFIED ANSWER
                                 if (answerInput.value.toLowerCase().trim() === correctAnswer) {
                                     updateNarrator("Correct! You either have an amazing memory for useless details or you're very good at Ctrl+F. Either way, impressive!");
                                     advanceStage();
@@ -593,7 +633,7 @@
                             };
                             questionArea.appendChild(answerInput);
                             questionArea.appendChild(submitAnswerButton);
-                            interactiveArea.appendChild(questionArea); // Append question below hidden ToS
+                            interactiveArea.appendChild(questionArea);
                         }
                     };
                     break;
@@ -681,14 +721,15 @@
                         if (fakeTimerSeconds <= 0) {
                             clearInterval(fakeTimerInterval);
                             updateNarrator("Wow, you actually waited! Or left this tab open. I'm impressed by your patience. Or your multi-tasking. But that wasn't the <span class='clickable-text' onclick='solveFakeTimer()'>intended solution</span>, you know.");
+                            // No auto-advance, they need to click the solution or wait, then get this message
                         }
                     }, 1000);
                     
                     setTimeout(() => {
-                        if (currentStage === 7 && fakeTimerPenalties === 0 && fakeTimerSeconds > 0) { // Check timer still running
+                        if (currentStage === 7 && fakeTimerPenalties === 0 && fakeTimerSeconds > 0) { 
                              updateNarrator(narratorLines[7] + " This is taking ages... maybe there's a <span class='clickable-text' onclick='solveFakeTimer()'>shortcut</span> hidden in my words?");
                         }
-                    }, 10000);
+                    }, 10000); // 10 seconds
                     break;
 
 
@@ -750,8 +791,8 @@
                                 } catch (err) {
                                     console.error("Microphone access denied or failed:", err);
                                     updateNarrator("Mic access FAILED or was DENIED. Tsk. Typical. Stage fright? Luckily, Uri, in his infinite wisdom, included a <span class='clickable-text' onclick='solveScreamStageBypass()'>Silent Declaration of Screaming Intent</span> form. Click the highlighted text in this very sentence.");
-                                    screamButton.disabled = true;
-                                    screamButton.textContent = "Mic Failed";
+                                    screamButton.disabled = true; 
+                                    screamButton.textContent = "Mic Failed"; 
                                 }
                             };
                         }
@@ -852,14 +893,9 @@
                 case 15: // Original Stage 11 -> Now Squirrel Distraction
                     const squirrelImg = document.createElement('img');
                     squirrelImg.id = 'squirrel-gif';
-                    // For local image:
-                    // 1. Save your squirrel.gif in the same directory as this HTML file.
-                    // 2. Change the src below to: squirrelImg.src = 'squirrel.gif';
-                    // Or if in an 'images' subfolder: squirrelImg.src = 'images/squirrel.gif';
                     squirrelImg.src = 'https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExZGpuY2oxeG0waDh6eW5xdGwzdWRvdHl1NnVoaXN0ZmR1b3dxYTVhZCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/5K7ngCtszoxxbaBieC/giphy.gif'; 
                     squirrelImg.alt = 'A distracting squirrel';
                     interactiveArea.appendChild(squirrelImg);
-                    // The clickable span "A SQUIRREL!" in narratorLines[15] is the only way.
                     break;
 
                 case 16: // Original Stage 12: Final "Are you sure?"
@@ -897,53 +933,49 @@
         }
 
         // Solution functions for specific stages needing direct calls from HTML spans
-        function solveOriginalStage3() { // Was Stage 3, now Stage 4 ("that")
+        function solveOriginalStage3() { 
             if (currentStage === 4) {
                 updateNarrator("You clicked 'that'! You're not supposed to click 'that'! Fine, you're more perceptive than you look.");
                 advanceStage();
             }
         }
-        function solveOriginalStage6() { // Was Stage 6, now Stage 8 (code "@")
+        function solveOriginalStage6() { 
             if (currentStage === 8) {
                 updateNarrator("Aha! You found the slightly-off character in the variable name! My typo, your treasure. Or something.");
                 advanceStage();
             }
         }
-        function solveOriginalStage9() { // Was Stage 9, now Stage 12 ("magic")
+        function solveOriginalStage9() { 
             if (currentStage === 12) {
                 updateNarrator("You clicked 'magic'! That's the *real* magic word here. Clever clogs.");
                 advanceStage();
             }
         }
-        function solveOriginalStage11Distraction() { // Was Stage 11, now Stage 15 ("A SQUIRREL!")
+        function solveOriginalStage11Distraction() { 
              if (currentStage === 15) {
                 updateNarrator("You clicked my text ABOUT the squirrel! You weren't distracted at all! You monster! Fine, proceed.");
                 advanceStage();
             }
         }
 
-        // --- New Stage Solution Functions ---
-        function showToSForReview() { // For Stage 3 (ToS Question)
+        function showToSForReview() { 
             if (currentStage !== 3) return;
             const tosQuestionArea = document.getElementById('tos-question-area');
             if (!tosQuestionArea) return;
 
-            // Remove any previously shown review ToS to prevent duplicates
             const existingReview = document.getElementById('tos-document-display-area');
             if (existingReview) existingReview.remove();
             
-            // Create and insert the ToS review display
             const reviewDiv = document.createElement('div');
-            reviewDiv.id = 'tos-document-display-area'; // Give it an ID for potential removal/check
-            reviewDiv.innerHTML = originalTosContentHTML; // Use stored original ToS
-            reviewDiv.classList.remove('hidden'); // Ensure it's visible
+            reviewDiv.id = 'tos-document-display-area'; 
+            reviewDiv.innerHTML = originalTosContentHTML; 
+            reviewDiv.classList.remove('hidden'); 
 
-            // Insert the ToS review before the question area
             tosQuestionArea.parentNode.insertBefore(reviewDiv, tosQuestionArea);
             updateNarrator("The Terms of Service document has re-appeared above the question. Happy hunting for that snack info!");
         }
 
-        function solveFakeTimer() { // For new Stage 7
+        function solveFakeTimer() { 
             if (currentStage === 7) {
                 if (fakeTimerInterval) clearInterval(fakeTimerInterval);
                 updateNarrator("Aha! You found the hidden eject button in my rambling! Patience is for those who don't read the fine print... or my text carefully. Well done.");
@@ -951,14 +983,14 @@
             }
         }
         
-        function solveScreamStageBypass() { // For new Stage 10 (mic fail path)
+        function solveScreamStageBypass() { 
             if (currentStage === 10) {
                 updateNarrator("The Silent Declaration of Screaming Intent has been duly noted (and ignored, mostly). But rules are rules, and clicking that was the rule. Onwards!");
                 advanceStage();
             }
         }
 
-        function solveWhatsAppStage() { // For new Stage 14
+        function solveWhatsAppStage() { 
             if (currentStage === 14) {
                 const whatsappPopup = document.getElementById('fake-whatsapp-popup');
                 if (whatsappPopup) whatsappPopup.remove();
@@ -991,15 +1023,13 @@
             fakeTimerPenalties = 0;
             originalTosContentHTML = "";
 
+            cleanupDraggableListeners(); // Important: remove global listeners for draggable
+
             const whatsappPopup = document.getElementById('fake-whatsapp-popup');
             if (whatsappPopup) whatsappPopup.remove();
             const draggablePopup = document.getElementById('fake-popup');
             if(draggablePopup) draggablePopup.remove();
             
-            document.onmousemove = null; // Clean up global listeners just in case
-            document.onmouseup = null;   // (makeDraggable should handle its own, but belt-and-suspenders)
-
-
             finalStatusArea.classList.add('hidden');
             gameTitle.textContent = "Uri Rosen's Status Chase";
             document.body.style.backgroundColor = '#1a1a1a'; 
